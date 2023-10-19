@@ -1,12 +1,1 @@
-
-
-
-
-
-
-
-
-
-
-
-                console.log("hllo")
+console.log('hllo');
