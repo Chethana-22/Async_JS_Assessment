@@ -1,34 +1,34 @@
 const fs = require('fs').promises;
 
-async function readAndConvertToUppercase() {
-  try {
+                                    async function readAndConvertToUppercase() {
+  try                     {
     const data = await fs.readFile('lipsum.txt', 'utf-8');
     const uppercaseContent = data.toUpperCase();
-    const filename = 'uppercase.txt'
+                                                          const filename = 'uppercase.txt'
     await fs.writeFile(filename, uppercaseContent);
-    fs.writeFile('filenames.txt',filename);
+              fs.appendFile('filenames.txt',filename + '\n');
     return 'uppercase.txt';
   } catch (error) {
     throw new Error(`Error in readAndConvertToUppercase: ${error.message}`);
   }
 }
 
+const sentenceFiles = [];
 async function readUppercaseAndSplit() {
   try {
     const data = await fs.readFile('uppercase.txt', 'utf-8');
     const sentences = data.split(/[.!?]/);
-    const sentenceFiles = [];
-
+    
+    let filename;
     for (let i = 0; i < sentences.length; i++) {
       const sentence = sentences[i].trim();
       if (sentence.length > 0) {
-        const filename = `sentence_${i + 1}.txt`;
+         filename = `sentence_${i + 1}.txt`;
         await fs.writeFile(filename, sentence);
-        fs.appendFile('filenames.txt \n', filename);
         sentenceFiles.push(sentence);
+        await fs.appendFile('filenames.txt',filename + '\n');
       }
     }
-
     return sentenceFiles;
   } catch (error) {
     throw new Error(`Error in readUppercaseAndSplit: ${error.message}`);
@@ -37,9 +37,10 @@ async function readUppercaseAndSplit() {
 
 async function readSentencesSortAndWrite() {
   try {
-    const sentenceFiles = await readUppercaseAndSplit();
     const sortedSentences = sentenceFiles.sort().join('\n');
-    await fs.writeFile('sorted.txt', sortedSentences);
+    const filename = 'sorted.txt';
+    await fs.writeFile(filename, sortedSentences);
+    fs.appendFile('filenames.txt',filename + '\n');
     return 'sorted.txt';
   } catch (error) {
     throw new Error(`Error in readSentencesSortAndWrite: ${error.message}`);
@@ -48,45 +49,33 @@ async function readSentencesSortAndWrite() {
 
 async function readFilenamesAndDelete() {
   try {
-    const filenames = await fs.readFile('filenames.txt', 'utf-8');
-    const filesToDelete = filenames.split('\n').filter((file) => file.trim() !== '');
+    const data = await fs.readFile('filenames.txt', 'utf-8');
+    const fileList = data.split('\n').map(line => line.trim());
 
-    const deletePromises = filesToDelete.map(async (file) => {
+    for (const filename of fileList) {
       try {
-        await fs.unlink(file);
-      } catch (error) {
-        console.error(`Error deleting ${file}: ${error.message}`);
+        if (filename) {
+          await fs.unlink(filename); 
+          console.log(`Deleted: ${filename}`);
+        }
+      } catch (err) {
+        console.error(`Error deleting ${filename}: ${err.message}`);
       }
-    });
+    }
 
-    await Promise.all(deletePromises);
-  } catch (error) {
-    throw new Error(`Error in readFilenamesAndDelete: ${error.message}`);
+    console.log('All files deleted.');
+  } catch (err) {
+    console.error(`Error reading filenames.txt: ${err.message}`);
   }
 }
 
-function writefile(file, resultArray) {
-  fs.writeFile(file, resultArray, 'utf8', (err) => {
-    if (err) {
-      console.log('Error:', err);
-      return;
-    }
-  });
-}
 async function main() {
   try {
-    const uppercaseFile = await readAndConvertToUppercase();
-    if(uppercaseFile){
-      await readUppercaseAndSplit();
-      
-    }
-
+   await readAndConvertToUppercase();
+    await readUppercaseAndSplit(); 
     await readSentencesSortAndWrite();
-      await readFilenamesAndDelete();
-    // writefile('filenames.txt', uppercaseFile);
+    await readFilenamesAndDelete();
    
-   
-
     console.log('All tasks completed successfully.');
   } catch (error) {
     console.error(`An error occurred: ${error.message}`);
